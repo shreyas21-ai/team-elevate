@@ -1,15 +1,16 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 
-from routes.appointments import appointments_bp
 from routes.auth import auth_bp
 from routes.doctors import doctors_bp
+from routes.appointments import appointments_bp
 
 
 def create_app():
     app = Flask(__name__)
     CORS(app)
 
+    # Register Blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(doctors_bp)
     app.register_blueprint(appointments_bp)
@@ -34,7 +35,6 @@ def create_app():
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     app.run(debug=True)
