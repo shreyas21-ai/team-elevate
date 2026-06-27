@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPendingApplications, reviewLoan } from '../../../services/loanService';
 import type { LoanApplication } from '../../../types';
-import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
 import { Alert } from '../../../components/ui/Alert';
 import { Badge } from '../../../components/ui/Badge';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { useToast } from '../../../hooks/useToast';
 
 export const OfficerReview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const [application, setApplication] = useState<LoanApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -32,6 +34,7 @@ export const OfficerReview = () => {
     try {
       const riskScore = action === 'approved' ? Math.floor(Math.random() * 40) + 60 : undefined;
       await reviewLoan(Number(id), action, riskScore);
+      addToast(`Application #${id} ${action} successfully!`, 'success');
       navigate('/officer/applications');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed');
@@ -42,8 +45,19 @@ export const OfficerReview = () => {
 
   if (loading) {
     return (
-      <div className="page" style={{ textAlign: 'center', padding: 60 }}>
-        <Spinner size="lg" />
+      <div className="page page-narrow">
+        <Skeleton width="300px" height="32px" />
+        <Skeleton width="200px" height="20px" style={{ marginTop: 8 }} />
+        <div className="card" style={{ marginTop: 24, padding: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i}>
+                <Skeleton width="100px" height="16px" />
+                <Skeleton width="140px" height="28px" style={{ marginTop: 6 }} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -59,57 +73,56 @@ export const OfficerReview = () => {
   if (!application) return null;
 
   const riskScore = application.risk_score ?? Math.min(100, Math.round((application.monthly_income / application.amount) * 100));
+  const riskColor = riskScore >= 70 ? '#16a34a' : riskScore >= 40 ? '#d97706' : '#dc2626';
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
+    <div className="page page-narrow">
       <h2>Review Application #{application.id}</h2>
       <p>Review the loan details and make a decision.</p>
 
       <Alert type="error">{error}</Alert>
 
-      <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginTop: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Loan Amount</label>
-            <p style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>${application.amount.toLocaleString()}</p>
+      <div className="card" style={{ marginTop: 24 }}>
+        <div className="review-grid">
+          <div className="review-field">
+            <span className="review-label">Loan Amount</span>
+            <span className="review-value-lg">${application.amount.toLocaleString()}</span>
           </div>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Monthly Income</label>
-            <p style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>${application.monthly_income.toLocaleString()}</p>
+          <div className="review-field">
+            <span className="review-label">Monthly Income</span>
+            <span className="review-value-lg">${application.monthly_income.toLocaleString()}</span>
           </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Purpose</label>
-            <p style={{ fontSize: '1rem', color: '#475569' }}>{application.purpose}</p>
+          <div className="review-field review-field-full">
+            <span className="review-label">Purpose</span>
+            <span className="review-value">{application.purpose}</span>
           </div>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Status</label>
-            <div style={{ marginTop: 4 }}><Badge variant="warning">{application.status}</Badge></div>
+          <div className="review-field">
+            <span className="review-label">Status</span>
+            <Badge variant="warning">{application.status}</Badge>
           </div>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Risk Score</label>
-            <p style={{ fontSize: '1.2rem', fontWeight: 700, color: riskScore >= 70 ? '#16a34a' : riskScore >= 40 ? '#d97706' : '#dc2626' }}>
-              {riskScore}/100
-            </p>
+          <div className="review-field">
+            <span className="review-label">Risk Score</span>
+            <span className="review-value-lg" style={{ color: riskColor }}>{riskScore}/100</span>
           </div>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Submitted</label>
-            <p style={{ fontSize: '1rem', color: '#475569' }}>{new Date(application.created_at).toLocaleString()}</p>
+          <div className="review-field">
+            <span className="review-label">Submitted</span>
+            <span className="review-value">{new Date(application.created_at).toLocaleString()}</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
+        <div className="review-actions">
           <Button
             variant="secondary"
             loading={actionLoading}
             onClick={() => handleAction('rejected')}
-            style={{ flex: 1, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}
+            className="btn-reject"
           >
             Reject
           </Button>
           <Button
             loading={actionLoading}
             onClick={() => handleAction('approved')}
-            style={{ flex: 1 }}
+            className="btn-approve"
           >
             Approve
           </Button>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Login } from './app/(auth)/login/Login';
@@ -17,26 +18,28 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
-              <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
-                <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-                <Route path="/customer/apply" element={<CustomerApply />} />
-                <Route path="/customer/history" element={<CustomerHistory />} />
-                <Route path="/customer/profile" element={<CustomerProfile />} />
-              </Route>
-              <Route element={<ProtectedRoute allowedRoles={['officer']} />}>
-                <Route path="/officer/dashboard" element={<OfficerDashboard />} />
-                <Route path="/officer/applications" element={<OfficerApplications />} />
-                <Route path="/officer/review/:id" element={<OfficerReview />} />
-                <Route path="/officer/profile" element={<OfficerProfile />} />
+        <ToastProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<DashboardLayout />}>
+                <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
+                  <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+                  <Route path="/customer/apply" element={<CustomerApply />} />
+                  <Route path="/customer/history" element={<CustomerHistory />} />
+                  <Route path="/customer/profile" element={<CustomerProfile />} />
+                </Route>
+                <Route element={<ProtectedRoute allowedRoles={['officer']} />}>
+                  <Route path="/officer/dashboard" element={<OfficerDashboard />} />
+                  <Route path="/officer/applications" element={<OfficerApplications />} />
+                  <Route path="/officer/review/:id" element={<OfficerReview />} />
+                  <Route path="/officer/profile" element={<OfficerProfile />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

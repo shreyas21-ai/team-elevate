@@ -1,67 +1,84 @@
 import { useState, useEffect } from 'react';
 import { getMyApplications } from '../../../services/loanService';
 import type { LoanApplication } from '../../../types';
-import { Spinner } from '../../../components/ui/Spinner';
 import { Badge } from '../../../components/ui/Badge';
+import { Skeleton } from '../../../components/ui/Skeleton';
+
+const statusVariant = (status: string) => {
+  if (status === 'approved') return 'success';
+  if (status === 'rejected') return 'error';
+  return 'warning';
+};
+
+const TableSkeleton = () => (
+  <div className="card" style={{ padding: 24 }}>
+    <Skeleton width="160px" height="24px" />
+    <div style={{ marginTop: 20 }}>
+      {[1, 2, 3].map((i) => (
+        <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
+          <Skeleton width="40px" height="20px" />
+          <Skeleton width="100px" height="20px" />
+          <Skeleton width="180px" height="20px" />
+          <Skeleton width="100px" height="20px" />
+          <Skeleton width="70px" height="24px" borderRadius="12px" />
+          <Skeleton width="90px" height="20px" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 export const CustomerHistory = () => {
   const [applications, setApplications] = useState<LoanApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     getMyApplications()
       .then(setApplications)
-      .catch(() => {})
+      .catch(() => setError('Failed to load applications'))
       .finally(() => setLoading(false));
   }, []);
-
-  const statusVariant = (status: string) => {
-    if (status === 'approved') return 'success';
-    if (status === 'rejected') return 'error';
-    return 'warning';
-  };
 
   return (
     <div className="page">
       <h2>My Applications</h2>
       <p>View the status of all your loan applications.</p>
 
-      <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginTop: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <div className="card" style={{ marginTop: 24 }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}><Spinner size="lg" /></div>
+          <TableSkeleton />
+        ) : error ? (
+          <p className="empty-state">{error}</p>
         ) : applications.length === 0 ? (
-          <p style={{ color: '#94a3b8', textAlign: 'center', padding: 40 }}>
-            No applications found.
-          </p>
+          <p className="empty-state">No applications found.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '12px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.85rem' }}>ID</th>
-                <th style={{ padding: '12px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.85rem' }}>Amount</th>
-                <th style={{ padding: '12px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.85rem' }}>Purpose</th>
-                <th style={{ padding: '12px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.85rem' }}>Monthly Income</th>
-                <th style={{ padding: '12px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.85rem' }}>Status</th>
-                <th style={{ padding: '12px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.85rem' }}>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applications.map((app) => (
-                <tr key={app.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 8px', fontSize: '0.9rem' }}>#{app.id}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '0.9rem', fontWeight: 600 }}>${app.amount.toLocaleString()}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '0.9rem', color: '#475569' }}>{app.purpose}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '0.9rem' }}>${app.monthly_income.toLocaleString()}</td>
-                  <td style={{ padding: '12px 8px' }}>
-                    <Badge variant={statusVariant(app.status)}>{app.status}</Badge>
-                  </td>
-                  <td style={{ padding: '12px 8px', fontSize: '0.85rem', color: '#64748b' }}>
-                    {new Date(app.created_at).toLocaleDateString()}
-                  </td>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Amount</th>
+                  <th>Purpose</th>
+                  <th>Monthly Income</th>
+                  <th>Status</th>
+                  <th>Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {applications.map((app) => (
+                  <tr key={app.id}>
+                    <td className="td-id">#{app.id}</td>
+                    <td className="td-amount">${app.amount.toLocaleString()}</td>
+                    <td className="td-purpose">{app.purpose}</td>
+                    <td className="td-amount">${app.monthly_income.toLocaleString()}</td>
+                    <td><Badge variant={statusVariant(app.status)}>{app.status}</Badge></td>
+                    <td className="td-date">{new Date(app.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
